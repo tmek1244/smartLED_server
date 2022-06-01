@@ -1,5 +1,7 @@
+#include <Arduino.h>
+
 #include "WiFi.h"
-#include <analogWrite.h>
+// #include <analogWrite.h>
 #include "secrets.h"
  
 WiFiServer wifiServer(80);
@@ -62,8 +64,6 @@ void setup() {
 int red;
 int green;
 int blue;
-
-
  
 void loop() {
 
