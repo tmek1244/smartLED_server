@@ -1,7 +1,7 @@
-#include <Arduino.h>
-
 #include <WiFi.h>
-// #include <analogWrite.h>
+#include <Arduino.h>
+#include <Preferences.h>
+
 #include "secrets.h"
 
 // WiFiServer wifiServer(80);
@@ -30,6 +30,8 @@ const int resolution = 8;
 unsigned long previousMillis = 0;
 unsigned long interval = 30000;  // 30s
 
+Preferences settings;
+
 void WiFiStationConnected(WiFiEvent_t event, WiFiEventInfo_t info);
 void WiFiStationDisconnected(WiFiEvent_t event, WiFiEventInfo_t info);
 
@@ -47,6 +49,7 @@ void setup() {
   // ESP32 station disconnected from AP
   WiFi.onEvent(WiFiStationDisconnected, ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
 
+  settings.begin("smartLED", false);
 
   if (!WiFi.config(localIP, gateway, subnet)) {
     Serial.println("STA Failed to configure");
@@ -55,10 +58,6 @@ void setup() {
 
   setUpLeds();
 }
-
-int red;
-int green;
-int blue;
 
 void loop() {
   if (WiFi.status() == WL_CONNECTED) {
@@ -94,9 +93,19 @@ void setUpLeds() {
   ledcAttachPin(redPin, ledChannelRed);
   ledcAttachPin(greenPin, ledChannelGreen);
   ledcAttachPin(bluePin, ledChannelBlue);
+
+  int red = settings.getInt("red", 0);
+  int green = settings.getInt("green", 0);
+  int blue = settings.getInt("blue", 0);
+
+  ledcWrite(ledChannelRed, red);
+  ledcWrite(ledChannelGreen, green);
+  ledcWrite(ledChannelBlue, blue);
 }
 
 void parsePacket(int packetSize) {
+  int red, green, blue;
+
   Serial.printf("Received packet of size %d\n", packetSize);
 
   int len = Udp.read(packetBuffer, 255);
@@ -109,6 +118,10 @@ void parsePacket(int packetSize) {
     ledcWrite(ledChannelRed, red);
     ledcWrite(ledChannelGreen, green);
     ledcWrite(ledChannelBlue, blue);
+
+    settings.putInt("red", red);
+    settings.putInt("green", green);
+    settings.putInt("blue", blue);
   }
 
   Serial.printf("Red: %d\nGreen: %d\nBlue: %d\n", red, green, blue);
